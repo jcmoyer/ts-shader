@@ -11,6 +11,7 @@
     "build": "tsc"
   },
   "author": "jcmoyer",
+  "repository": "github:jcmoyer/ts-shader",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^12.0.0",
