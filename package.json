@@ -1,0 +1,22 @@
+{
+  "name": "ts-shader",
+  "version": "0.0.1",
+  "description": "webgl shader -> typescript class generator",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ts-shader": "bin/ts-shader.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "jcmoyer",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^12.0.0",
+    "typescript": "^3.4.5"
+  },
+  "dependencies": {
+    "commander": "^2.20.0"
+  }
+}
