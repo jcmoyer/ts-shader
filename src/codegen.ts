@@ -39,12 +39,13 @@ function processIncludes(inputSource: string, searchPaths: string[], level?: num
   const outputSource = inputSource.replace(includeRegex, (include, filename) => {
     for (let searchPath of searchPaths) {
       const includeFilename = path.join(searchPath, filename);
-      if (!fs.existsSync(includeFilename)) {
-        console.error(`could not find include: ${includeFilename}`);
-        process.exit(1);
+      if (fs.existsSync(includeFilename)) {
+        return processIncludes(fs.readFileSync(includeFilename).toString(), searchPaths, level + 1);
       }
-      return processIncludes(fs.readFileSync(includeFilename).toString(), searchPaths, level + 1);
     }
+    console.error(`could not find include "${filename}" in any of these paths:`);
+    console.error(searchPaths);
+    process.exit(1);
   });
   return outputSource;
 }
