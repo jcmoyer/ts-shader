@@ -43,21 +43,19 @@ if (!fs.existsSync(inputFSFilename)) {
 
 const searchPaths = [path.dirname(inputVSFilename)];
 
-try {
-  const classSrc = generateClass({
-    inputVS: fs.readFileSync(inputVSFilename).toString(),
-    inputFS: fs.readFileSync(inputFSFilename).toString(),
-    searchPaths: searchPaths,
-    normalizeFieldNames: program.transformNames,
-    baseClassName: program.extends
-  });
-
-  console.log(classSrc);
-} catch (e) {
+generateClass({
+  inputVS: fs.readFileSync(inputVSFilename).toString(),
+  inputFS: fs.readFileSync(inputFSFilename).toString(),
+  searchPaths: searchPaths,
+  normalizeFieldNames: program.transformNames,
+  baseClassName: program.extends
+})
+.then(console.log)
+.catch(e => {
   if (e instanceof CodeGenError) {
-    console.log(`${e.message}: ${e.error.message}`);
+    console.error(`${e.message}: ${e.error.message}`);
     process.exit(1);
   } else {
     throw e;
   }
-}
+})

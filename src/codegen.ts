@@ -42,7 +42,7 @@ function findFile(filename: string, searchPaths: string[]): string {
 }
 
 // quick and dirty #include implementation
-function processIncludes(inputSource: string, searchPaths: string[], level?: number): string {
+async function processIncludes(inputSource: string, searchPaths: string[], level?: number): Promise<string> {
   if (level === undefined) {
     level = 0;
   }
@@ -51,22 +51,26 @@ function processIncludes(inputSource: string, searchPaths: string[], level?: num
     throw new Error('include depth exceeds 256');
   }
 
-  const includeRegex = /^#include "(.+?)"$/mg;
-  const outputSource = inputSource.replace(includeRegex, (include, filename) => {
-    const includeFilename = findFile(filename, searchPaths);
-    return processIncludes(fs.readFileSync(includeFilename).toString(), searchPaths, level + 1);
-  });
-  return outputSource;
+  const sourceLines = inputSource.split('\n');
+  for (let i = 0; i < sourceLines.length; ++i) {
+    const match = sourceLines[i].match(/^#include "(.+?)"$/);
+    if (match) {
+      const includeFilename = findFile(match[1], searchPaths);
+      const includeSource = await fs.promises.readFile(includeFilename);
+      sourceLines[i] = await processIncludes(includeSource.toString(), searchPaths, level + 1);
+    }
+  }
+  return sourceLines.join('\n');
 }
 
-export function generateClass(opts: CodeGenOptions) {
+export async function generateClass(opts: CodeGenOptions) {
   let attribs: AttributeInfo[];
   let uniforms: UniformInfo[];
   let outputVSSource: string;
   let outputFSSource: string;
   try {
-    outputVSSource = processIncludes(opts.inputVS, opts.searchPaths);
-    outputFSSource = processIncludes(opts.inputFS, opts.searchPaths);
+    outputVSSource = await processIncludes(opts.inputVS, opts.searchPaths);
+    outputFSSource = await processIncludes(opts.inputFS, opts.searchPaths);
   } catch (e) {
     if (e instanceof Error)
       throw new CodeGenError(e, 'error processing includes');
