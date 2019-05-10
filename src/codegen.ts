@@ -103,6 +103,6 @@ ${outputVSSource}
 ${outputFSSource}
 \`;
 }
-  `
+`
 }
 
