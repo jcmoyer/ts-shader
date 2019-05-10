@@ -16,7 +16,7 @@ import * as program from 'commander';
 import * as process from 'process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateClass } from './codegen';
+import { generateClass, CodeGenError } from './codegen';
 
 program
   .usage('<vertex shader> <fragment shader>')
@@ -43,12 +43,21 @@ if (!fs.existsSync(inputFSFilename)) {
 
 const searchPaths = [path.dirname(inputVSFilename)];
 
-const classSrc = generateClass({
-  inputVS: fs.readFileSync(inputVSFilename).toString(),
-  inputFS: fs.readFileSync(inputFSFilename).toString(),
-  searchPaths: searchPaths,
-  normalizeFieldNames: program.transformNames,
-  baseClassName: program.extends
-});
+try {
+  const classSrc = generateClass({
+    inputVS: fs.readFileSync(inputVSFilename).toString(),
+    inputFS: fs.readFileSync(inputFSFilename).toString(),
+    searchPaths: searchPaths,
+    normalizeFieldNames: program.transformNames,
+    baseClassName: program.extends
+  });
 
-console.log(classSrc);
+  console.log(classSrc);
+} catch (e) {
+  if (e instanceof CodeGenError) {
+    console.log(`${e.message}: ${e.error.message}`);
+    process.exit(1);
+  } else {
+    throw e;
+  }
+}

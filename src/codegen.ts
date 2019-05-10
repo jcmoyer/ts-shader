@@ -24,6 +24,23 @@ export interface CodeGenOptions {
   normalizeFieldNames: boolean;
 }
 
+export class CodeGenError extends Error {
+  constructor(public error: Error, message: string) {
+    super(message);
+    Object.setPrototypeOf(this, CodeGenError.prototype);
+  }
+}
+
+function findFile(filename: string, searchPaths: string[]): string {
+  for (const searchPath of searchPaths) {
+    const fullFilename = path.join(searchPath, filename);
+    if (fs.existsSync(fullFilename)) {
+      return fullFilename;
+    }
+  }
+  throw new Error(`could not find file ${filename} in any of:\n${searchPaths.join('\n')}`);
+}
+
 // quick and dirty #include implementation
 function processIncludes(inputSource: string, searchPaths: string[], level?: number): string {
   if (level === undefined) {
@@ -31,21 +48,13 @@ function processIncludes(inputSource: string, searchPaths: string[], level?: num
   }
 
   if (level >= 256) {
-    console.error('include depth exceeds 256; aborting');
-    process.exit(1);
+    throw new Error('include depth exceeds 256');
   }
 
   const includeRegex = /^#include "(.+?)"$/mg;
   const outputSource = inputSource.replace(includeRegex, (include, filename) => {
-    for (let searchPath of searchPaths) {
-      const includeFilename = path.join(searchPath, filename);
-      if (fs.existsSync(includeFilename)) {
-        return processIncludes(fs.readFileSync(includeFilename).toString(), searchPaths, level + 1);
-      }
-    }
-    console.error(`could not find include "${filename}" in any of these paths:`);
-    console.error(searchPaths);
-    process.exit(1);
+    const includeFilename = findFile(filename, searchPaths);
+    return processIncludes(fs.readFileSync(includeFilename).toString(), searchPaths, level + 1);
   });
   return outputSource;
 }
@@ -53,14 +62,23 @@ function processIncludes(inputSource: string, searchPaths: string[], level?: num
 export function generateClass(opts: CodeGenOptions) {
   let attribs: AttributeInfo[];
   let uniforms: UniformInfo[];
-  
-  const outputVSSource = processIncludes(opts.inputVS, opts.searchPaths);
+  let outputVSSource: string;
+  let outputFSSource: string;
+  try {
+    outputVSSource = processIncludes(opts.inputVS, opts.searchPaths);
+    outputFSSource = processIncludes(opts.inputFS, opts.searchPaths);
+  } catch (e) {
+    if (e instanceof Error)
+      throw new CodeGenError(e, 'error processing includes');
+    else
+      throw e;
+  }
+
+  // attributes can only appear in vertex shaders
   attribs = extractAttributes(outputVSSource);
-  uniforms = extractUniforms(outputVSSource);
-  
-  const outputFSSource = processIncludes(opts.inputFS, opts.searchPaths);
-  uniforms = uniforms.concat(extractUniforms(outputFSSource));
-  
+  // uniforms are shared between both vertex and fragment shaders
+  uniforms = extractUniforms(outputVSSource).concat(extractUniforms(outputFSSource));
+
   return `
   export default class Shader${opts.baseClassName ? ` extends ${opts.baseClassName}` : ''} {
     ${attribs.map(a => `${opts.normalizeFieldNames ? shaderClassAttributeName(a.name) : a.name}: number;`).join('\n  ')}
