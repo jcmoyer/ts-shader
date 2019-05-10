@@ -84,25 +84,25 @@ export async function generateClass(opts: CodeGenOptions) {
   uniforms = extractUniforms(outputVSSource).concat(extractUniforms(outputFSSource));
 
   return `
-  export default class Shader${opts.baseClassName ? ` extends ${opts.baseClassName}` : ''} {
-    ${attribs.map(a => `${opts.normalizeFieldNames ? shaderClassAttributeName(a.name) : a.name}: number;`).join('\n  ')}
-  
-    ${uniforms.map(a => `${opts.normalizeFieldNames ? shaderClassUniformName(a.name) : a.name}: WebGLUniformLocation;`).join('\n  ')}
-  
-    ${opts.baseClassName ? `
-    constructor(gl: WebGLRenderingContext) {
-      super(gl, Shader.vsSource, Shader.fsSource);
-    }
-    ` : ''
-    }
-  
-    static vsSource = \`
-  ${outputVSSource}
-  \`;
-    static fsSource = \`
-  ${outputFSSource}
-  \`;
+export default class Shader${opts.baseClassName ? ` extends ${opts.baseClassName}` : ''} {
+  ${attribs.map(a => `${opts.normalizeFieldNames ? shaderClassAttributeName(a.name) : a.name}: number;`).join('\n  ')}
+
+  ${uniforms.map(a => `${opts.normalizeFieldNames ? shaderClassUniformName(a.name) : a.name}: WebGLUniformLocation;`).join('\n  ')}
+
+  ${opts.baseClassName ? `
+  constructor(gl: WebGLRenderingContext) {
+    super(gl, Shader.vsSource, Shader.fsSource);
   }
+  ` : ''
+  }
+
+  static vsSource = \`
+${outputVSSource}
+\`;
+  static fsSource = \`
+${outputFSSource}
+\`;
+}
   `
 }
 
