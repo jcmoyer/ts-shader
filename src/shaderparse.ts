@@ -39,7 +39,7 @@ export function extractAttributes(shaderSource: string): AttributeInfo[] {
 
 export function extractUniforms(shaderSource: string): UniformInfo[] {
   const uniforms = new Array();
-  const uniformRegex = /uniform\s+?((lowp|mediump|highp)\s+?)?(\w+)\s+?(\w+)\s*?;/gm;
+  const uniformRegex = /uniform\s+?((lowp|mediump|highp)\s+?)?(\w+)\s+?(\w+)\s*?(\[\d+\])?\s*?;/gm;
   let result;
   while (result = uniformRegex.exec(shaderSource)) {
     uniforms.push({
